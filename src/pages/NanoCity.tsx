@@ -1,15 +1,23 @@
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useUserState } from '../hooks/useUserState';
+import { useUser } from '../contexts/UserContext';
+import BadgeToast from '../components/BadgeToast';
 
-export default function NanoCity() {
-  const { addXp } = useUserState();
-  
-  // Function to award XP for exploring
-  const exploreAndEarnXP = () => {
-    addXp(5);
-    alert('You earned 5 XP for exploring Nano City!');
+const NanoCity: React.FC = () => {
+  const { setUserState } = useUser();
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
+  const handleSuccess = () => {
+    setUserState(prev => ({
+      ...prev,
+      xp: prev.xp + 10,
+      level: Math.floor((prev.xp + 10) / 100) + 1
+    }));
+    setToastMessage('You earned 10 XP!');
+    setShowToast(true);
   };
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 to-blue-700 text-white">
       <div className="max-w-4xl mx-auto pt-8 px-4">
@@ -43,7 +51,7 @@ export default function NanoCity() {
               </p>
               <div className="flex flex-col space-y-2">
                 <button 
-                  onClick={exploreAndEarnXP}
+                  onClick={handleSuccess}
                   className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors self-start"
                 >
                   Explore & Earn XP
@@ -68,6 +76,14 @@ export default function NanoCity() {
           </div>
         </section>
       </div>
+      {showToast && (
+        <BadgeToast
+          message={toastMessage}
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </div>
   );
-} 
+};
+
+export default NanoCity; 

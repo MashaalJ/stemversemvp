@@ -1,31 +1,38 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
-import type { UserState } from '../types';
+import type { UserState, Badge } from '../types';
 
 // Default user state
 const defaultUserState: UserState = {
   xp: 0,
   level: 1,
   badges: [],
+  skills: [],
+  streakDays: 0,
+  character: {
+    avatar: 'default',
+    color: '#3B82F6',
+    accessories: [],
+    name: 'Player'
+  },
+  quests: [],
+  currentZone: 'nano-city',
+  position: { x: 0, y: 0 },
+  unlockedItems: [],
+  lastLogin: new Date().toISOString()
 };
 
 // Create context with default values
-interface UserContextType {
+const UserContext = createContext<{
   userState: UserState;
-  updateXp: (xp: number) => void;
-  addBadge: (badge: string) => void;
-  resetUser: () => void;
-}
-
-const UserContext = createContext<UserContextType | undefined>(undefined);
+  setUserState: React.Dispatch<React.SetStateAction<UserState>>;
+} | null>(null);
 
 // Provider component
-interface UserProviderProps {
-  children: ReactNode;
-}
-
-export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
-  const [userState, setUserState] = useState<UserState>(defaultUserState);
+export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [userState, setUserState] = useState<UserState>(() => {
+    const savedState = localStorage.getItem('userState');
+    return savedState ? JSON.parse(savedState) : defaultUserState;
+  });
 
   // Load user state from localStorage on mount
   useEffect(() => {
@@ -42,43 +49,13 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   // Save to localStorage whenever user state changes
   useEffect(() => {
-    localStorage.setItem('stemverse_user', JSON.stringify(userState));
+    localStorage.setItem('userState', JSON.stringify(userState));
   }, [userState]);
 
-  // Update user XP and calculate level
-  const updateXp = (xp: number) => {
-    setUserState(prev => {
-      const newXp = prev.xp + xp;
-      // Simple level calculation (can be adjusted as needed)
-      const newLevel = Math.floor(newXp / 100) + 1;
-      
-      return {
-        ...prev,
-        xp: newXp,
-        level: newLevel,
-      };
-    });
-  };
-
-  // Add a new badge
-  const addBadge = (badge: string) => {
-    setUserState(prev => {
-      if (prev.badges.includes(badge)) return prev;
-      return {
-        ...prev,
-        badges: [...prev.badges, badge],
-      };
-    });
-  };
-
-  // Reset user to default state
-  const resetUser = () => {
-    setUserState(defaultUserState);
-    localStorage.removeItem('stemverse_user');
-  };
+  const value = { userState, setUserState };
 
   return (
-    <UserContext.Provider value={{ userState, updateXp, addBadge, resetUser }}>
+    <UserContext.Provider value={value}>
       {children}
     </UserContext.Provider>
   );
@@ -87,8 +64,22 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 // Custom hook for using the user context
 export const useUser = () => {
   const context = useContext(UserContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useUser must be used within a UserProvider');
   }
   return context;
+};
+
+export const addBadge = (badge: Badge, setUserState: React.Dispatch<React.SetStateAction<UserState>>) => {
+  setUserState(prev => {
+    const badgeExists = prev.badges.some(b => b.id === badge.id);
+    if (badgeExists) return prev;
+    
+    return {
+      ...prev,
+      badges: [...prev.badges, badge],
+      xp: prev.xp + 50,
+      level: Math.floor((prev.xp + 50) / 100) + 1
+    };
+  });
 }; 
