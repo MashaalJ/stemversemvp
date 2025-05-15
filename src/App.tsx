@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { UserProvider } from './contexts/UserContext';
 import Dashboard from './pages/Dashboard';
 import NanoCity from './pages/NanoCity';
@@ -7,7 +7,7 @@ import './App.css';
 
 function App() {
   return (
-    <Router basename="/stemverse-mvp">
+    <Router>
       <UserProvider>
         <div className="min-h-screen bg-gray-100">
           <Routes>
